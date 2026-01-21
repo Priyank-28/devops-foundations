@@ -1,0 +1,43 @@
+name: Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  compose-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Build and start stack
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+
+      - name: Wait for stack
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health || true)
+            if [ "$code" = "200" ]; then
+              echo "API healthy"
+              exit 0
+            fi
+            echo "Waiting... ($i)"
+            sleep 2
+          done
+          echo "Timed out waiting for health"
+          docker compose ps
+          docker compose logs --tail 200
+          exit 1
+
+      - name: Test /api/db
+        run: |
+          curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/db | grep 200
+          curl -s http://localhost:8080/api/db
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
