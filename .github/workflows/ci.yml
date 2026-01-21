@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Docker build
+        run: docker build -t day6-api:ci .
+
+      - name: Run container
+        run: |
+          docker run -d --name api -p 3000:3000 day6-api:ci
+          sleep 2
+
+      - name: Smoke test /health
+        run: |
+          curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/health | grep 200
+
+      - name: Cleanup container
+        if: always()
+        run: docker rm -f api
