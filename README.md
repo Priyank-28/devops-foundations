@@ -1,3 +1,6 @@
+![CI](https://github.com/Priyank-28/devops-foundations/actions/workflows/ci.yml/badge.svg)
+![Integration](https://github.com/Priyank-28/devops-foundations/actions/workflows/integration.yml/badge.svg)
+
 # Docker Compose Stack: API + Postgres + Nginx
 
 ## What this shows
